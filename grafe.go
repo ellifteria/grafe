@@ -175,4 +175,7 @@ func main() {
 			"public/"+fileName,
 		)
 	})
+
+	_, err = os.Create("public/.nojekyll")
+	check(err)
 }
