@@ -20,6 +20,8 @@ import (
 	"go.abhg.dev/goldmark/wikilink"
 
 	mathjax "github.com/litao91/goldmark-mathjax"
+
+	"go.abhg.dev/goldmark/anchor"
 )
 
 func check(err error) {
@@ -39,12 +41,24 @@ func walk(dir string, fileFunction func(filePath string)) {
 	}
 }
 
+func getExtension(filePath string) string {
+	filePathParts := strings.Split(strings.TrimSpace(filePath), "/")
+	fileName := filePathParts[len(filePathParts)-1]
+	fileNameElems := strings.Split(strings.TrimSpace(fileName), ".")
+	extension := strings.TrimPrefix(fileName, fileNameElems[0])
+	return extension
+}
+
+func removeExtension(filePath string) string {
+	return strings.TrimSuffix(strings.TrimSpace(filePath), getExtension(filePath))
+}
+
+func addExtension(filePath string, newExtension string) string {
+	return filePath + newExtension
+}
+
 func changeExtension(filePath string, newExtension string) string {
-	extension := func(name string) string {
-		elems := strings.Split(strings.TrimSpace(name), ".")
-		return elems[len(elems)-1]
-	}
-	return strings.TrimSuffix(filePath, "."+extension(filePath)) + newExtension
+	return addExtension(removeExtension(filePath), newExtension)
 }
 
 func createFile(path string) (*os.File, error) {
@@ -65,14 +79,6 @@ func copyFile(sourcePath string, destinationPath string) {
 	defer destination.Close()
 	_, err = io.Copy(destination, source)
 	check(err)
-}
-
-func isMdFile(filePath string) bool {
-	extension := func(name string) string {
-		elems := strings.Split(strings.TrimSpace(name), ".")
-		return elems[len(elems)-1]
-	}
-	return extension(filePath) == "md"
 }
 
 func parseTemplateDirectory(directory string) (*template.Template, error) {
@@ -118,7 +124,7 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 		Body:    template.HTML(buf.String()),
 	}
 
-	templateType := metaData["Template"].(string) + ".html"
+	templateType := addExtension(metaData["Template"].(string), ".html")
 
 	err = htmlTemplate.ExecuteTemplate(file, templateType, data)
 	check(err)
@@ -126,10 +132,17 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 
 func main() {
 	markdownWriter := goldmark.New(
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
 		goldmark.WithExtensions(
 			meta.Meta,
 			extension.Table,
 			&wikilink.Extender{},
+			&anchor.Extender{
+				Texter:   anchor.Text("#"),
+				Position: anchor.Before,
+			},
 			mathjax.MathJax,
 		),
 		goldmark.WithRendererOptions(
@@ -147,7 +160,7 @@ func main() {
 	check(err)
 
 	walk("content", func(fileName string) {
-		if isMdFile(fileName) {
+		if getExtension(fileName) == ".md" {
 			fileData, err := os.ReadFile(fileName)
 			check(err)
 			generateHtmlFile(
