@@ -2,8 +2,8 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"html/template"
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -16,6 +16,10 @@ import (
 	"github.com/yuin/goldmark/renderer"
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/util"
+
+	"go.abhg.dev/goldmark/wikilink"
+
+	mathjax "github.com/litao91/goldmark-mathjax"
 )
 
 func check(err error) {
@@ -43,19 +47,32 @@ func changeExtension(filePath string, newExtension string) string {
 	return strings.TrimSuffix(filePath, "."+extension(filePath)) + newExtension
 }
 
+func createFile(path string) (*os.File, error) {
+	if err := os.MkdirAll(filepath.Dir(path), 0770); err != nil {
+		return nil, err
+	}
+	return os.Create(path)
+}
+
+func copyFile(sourcePath string, destinationPath string) {
+	source, err := os.Open(sourcePath)
+	check(err)
+	defer source.Close()
+
+	destination, err := os.Create(destinationPath)
+	check(err)
+
+	defer destination.Close()
+	_, err = io.Copy(destination, source)
+	check(err)
+}
+
 func isMdFile(filePath string) bool {
 	extension := func(name string) string {
 		elems := strings.Split(strings.TrimSpace(name), ".")
 		return elems[len(elems)-1]
 	}
 	return extension(filePath) == "md"
-}
-
-func createFile(path string) (*os.File, error) {
-	if err := os.MkdirAll(filepath.Dir(path), 0770); err != nil {
-		return nil, err
-	}
-	return os.Create(path)
 }
 
 func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputFile string) {
@@ -70,7 +87,6 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 	err = markdownWriter.Convert([]byte(sourceMd), &buf, parser.WithContext(context))
 	check(err)
 	metaData := meta.Get(context)
-	fmt.Fprintln(os.Stderr, metaData)
 
 	var templateFile = "templates/base.html"
 	t, err := template.New("base.html").ParseFiles(templateFile)
@@ -95,6 +111,8 @@ func main() {
 		goldmark.WithExtensions(
 			meta.Meta,
 			extension.Table,
+			&wikilink.Extender{},
+			mathjax.MathJax,
 		),
 		goldmark.WithRendererOptions(
 			renderer.WithNodeRenderers(
@@ -104,7 +122,7 @@ func main() {
 		),
 	)
 
-	err := os.RemoveAll("output")
+	err := os.RemoveAll("public")
 	check(err)
 
 	walk("content", func(fileName string) {
@@ -113,6 +131,14 @@ func main() {
 		}
 		fileData, err := os.ReadFile(fileName)
 		check(err)
-		generateHtmlFile(markdownWriter, string(fileData), "output/"+changeExtension(fileName, ""))
+		generateHtmlFile(markdownWriter, string(fileData), "public/"+strings.TrimPrefix(changeExtension(fileName, ".html"), "content/"))
+	})
+
+	walk("static", func(fileName string) {
+		createFile("public/" + fileName)
+		copyFile(
+			fileName,
+			"public/"+fileName,
+		)
 	})
 }
