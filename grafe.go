@@ -75,6 +75,23 @@ func isMdFile(filePath string) bool {
 	return extension(filePath) == "md"
 }
 
+func parseTemplateDirectory(directory string) (*template.Template, error) {
+	var paths []string
+
+	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
+		check(err)
+
+		if !info.IsDir() {
+			paths = append(paths, path)
+		}
+		return nil
+	})
+
+	check(err)
+
+	return template.ParseFiles(paths...)
+}
+
 func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputFile string) {
 	var buf bytes.Buffer
 	var err error
@@ -88,8 +105,7 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 	check(err)
 	metaData := meta.Get(context)
 
-	var templateFile = "templates/base.html"
-	t, err := template.New("base.html").ParseFiles(templateFile)
+	htmlTemplate, err := parseTemplateDirectory("templates")
 	check(err)
 
 	data := struct {
@@ -102,7 +118,9 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 		Body:    template.HTML(buf.String()),
 	}
 
-	err = t.Execute(file, data)
+	templateType := metaData["Template"].(string) + ".html"
+
+	err = htmlTemplate.ExecuteTemplate(file, templateType, data)
 	check(err)
 }
 
@@ -116,7 +134,10 @@ func main() {
 		),
 		goldmark.WithRendererOptions(
 			renderer.WithNodeRenderers(
-				util.Prioritized(extension.NewTableHTMLRenderer(), 500),
+				util.Prioritized(
+					extension.NewTableHTMLRenderer(),
+					500,
+				),
 			),
 			html.WithUnsafe(),
 		),
@@ -126,12 +147,25 @@ func main() {
 	check(err)
 
 	walk("content", func(fileName string) {
-		if !isMdFile(fileName) {
-			return
+		if isMdFile(fileName) {
+			fileData, err := os.ReadFile(fileName)
+			check(err)
+			generateHtmlFile(
+				markdownWriter,
+				string(fileData),
+				"public/"+strings.TrimPrefix(
+					changeExtension(fileName, ".html"),
+					"content/",
+				),
+			)
+		} else {
+			newFileName := strings.TrimPrefix(fileName, "content/")
+			createFile("public/" + newFileName)
+			copyFile(
+				fileName,
+				"public/"+newFileName,
+			)
 		}
-		fileData, err := os.ReadFile(fileName)
-		check(err)
-		generateHtmlFile(markdownWriter, string(fileData), "public/"+strings.TrimPrefix(changeExtension(fileName, ".html"), "content/"))
 	})
 
 	walk("static", func(fileName string) {
