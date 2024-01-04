@@ -24,6 +24,8 @@ import (
 	"go.abhg.dev/goldmark/anchor"
 )
 
+var templates map[string]*template.Template
+
 func check(err error) {
 	if err != nil {
 		log.Fatal(err)
@@ -79,23 +81,6 @@ func copyFile(sourcePath string, destinationPath string) {
 	check(err)
 }
 
-func parseTemplateDirectory(directory string) (*template.Template, error) {
-	var paths []string
-
-	err := filepath.Walk(directory, func(path string, info os.FileInfo, err error) error {
-		check(err)
-
-		if !info.IsDir() {
-			paths = append(paths, path)
-		}
-		return nil
-	})
-
-	check(err)
-
-	return template.ParseFiles(paths...)
-}
-
 func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputFile string) {
 	var buf bytes.Buffer
 	var err error
@@ -113,9 +98,6 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 	file, err := os.Create(outputFile)
 	check(err)
 	defer file.Close()
-
-	htmlTemplate, err := parseTemplateDirectory("templates")
-	check(err)
 
 	params := metaData["Params"]
 
@@ -135,13 +117,33 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 		PageParams: params.(map[any]any),
 	}
 
-	templateType := addExtension(metaData["Template"].(string), ".html")
+	pageTemplateFile := addExtension(metaData["Template"].(string), ".html")
 
-	err = htmlTemplate.ExecuteTemplate(file, templateType, data)
+	pageTemplate, ok := templates[pageTemplateFile]
+	if !ok {
+		log.Fatalf("The template %s does not exist.\n", pageTemplateFile)
+	}
+
+	err = pageTemplate.ExecuteTemplate(file, pageTemplateFile, data)
 	check(err)
 }
 
 func main() {
+	templates = make(map[string]*template.Template)
+
+	templatesDir := "templates/"
+
+	layouts, err := filepath.Glob(templatesDir + "layouts/*")
+	check(err)
+
+	includes, err := filepath.Glob(templatesDir + "includes/*")
+	check(err)
+
+	for _, layout := range layouts {
+		files := append(includes, layout)
+		templates[filepath.Base(layout)] = template.Must(template.ParseFiles(files...))
+	}
+
 	markdownWriter := goldmark.New(
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
@@ -167,7 +169,7 @@ func main() {
 		),
 	)
 
-	err := os.RemoveAll("public")
+	err = os.RemoveAll("public")
 	check(err)
 
 	walk("content", func(fileName string) {
