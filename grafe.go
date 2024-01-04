@@ -61,11 +61,9 @@ func changeExtension(filePath string, newExtension string) string {
 	return addExtension(removeExtension(filePath), newExtension)
 }
 
-func createFile(path string) (*os.File, error) {
-	if err := os.MkdirAll(filepath.Dir(path), 0770); err != nil {
-		return nil, err
-	}
-	return os.Create(path)
+func createDirectoryPath(path string) {
+	err := os.MkdirAll(filepath.Dir(path), 0770)
+	check(err)
 }
 
 func copyFile(sourcePath string, destinationPath string) {
@@ -102,26 +100,39 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 	var buf bytes.Buffer
 	var err error
 
-	file, err := createFile(outputFile)
-	check(err)
-	defer file.Close()
-
 	context := parser.NewContext()
 	err = markdownWriter.Convert([]byte(sourceMd), &buf, parser.WithContext(context))
 	check(err)
 	metaData := meta.Get(context)
 
+	if metaData["Draft"] == true {
+		return
+	}
+
+	createDirectoryPath(outputFile)
+	file, err := os.Create(outputFile)
+	check(err)
+	defer file.Close()
+
 	htmlTemplate, err := parseTemplateDirectory("templates")
 	check(err)
 
+	params := metaData["Params"]
+
+	if params == nil {
+		params = *new(map[any]any)
+	}
+
 	data := struct {
-		Title   string
-		Summary string
-		Body    template.HTML
+		Title      string
+		Summary    string
+		Body       template.HTML
+		PageParams map[any]any
 	}{
-		Title:   metaData["Title"].(string),
-		Summary: metaData["Summary"].(string),
-		Body:    template.HTML(buf.String()),
+		Title:      metaData["Title"].(string),
+		Summary:    metaData["Summary"].(string),
+		Body:       template.HTML(buf.String()),
+		PageParams: params.(map[any]any),
 	}
 
 	templateType := addExtension(metaData["Template"].(string), ".html")
@@ -173,7 +184,7 @@ func main() {
 			)
 		} else {
 			newFileName := strings.TrimPrefix(fileName, "content/")
-			createFile("public/" + newFileName)
+			createDirectoryPath("public/" + newFileName)
 			copyFile(
 				fileName,
 				"public/"+newFileName,
@@ -182,7 +193,7 @@ func main() {
 	})
 
 	walk("static", func(fileName string) {
-		createFile("public/" + fileName)
+		createDirectoryPath("public/" + fileName)
 		copyFile(
 			fileName,
 			"public/"+fileName,
