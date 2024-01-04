@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html>
+
+    <head>
+
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="/static/css/style.css">
+
+        
+    <title>grafē</title>
+
+
+        
+
+<script type="text/javascript" id="MathJax-script" async
+src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js">
+</script>
+
+
+
+    </head>
+
+    <body>
+        
+
+    <nav class="menu">
+        <ul>
+            <li><a href="/">Home</a></li>
+        </ul>
+    </nav>
+
+    <hr>
+
+
+
+        
+
+    <h1>grafē</h1>
+    <p class="subtitle">A Simple Go Static Site Generator</p>
+
+    
+
+    <hr>
+
+    <p>grafē is a simple static site generator written by <a href="https://elliberes.me">Elli Beres</a>.
+It uses:</p>
+<ul>
+<li><a href="https://github.com/yuin">yuin</a>'s <a href="https://github.com/yuin/goldmark">goldmark</a> parser and goldmark extensions for markdown parsing</li>
+<li><a href="http://abhinavg.net/">abhinav</a>'s <a href="https://go.abhg.dev/goldmark/wikilink">wikilink</a> and <a href="https://go.abhg.dev/goldmark/anchor">anchor</a> goldmark extension for wiki-style links and anchor links</li>
+<li>litao91's <a href="https://github.com/litao91/goldmark-mathjax">goldmark-mathjax</a> goldmark extension for MathJax support</li>
+</ul>
+<h2 id="installation"><a class="anchor" href="#installation">#</a> Installation</h2>
+<pre><code class="language-text">git clone https://github.com/ellifteria/grafe.git
+cd grafe
+go install
+</code></pre>
+<h2 id="usage"><a class="anchor" href="#usage">#</a> Usage</h2>
+<p>To run grafē, run the <code>grafe</code> command in the root directory of the site.</p>
+<p>grafē renders HTML files from Markdown files in the <code>./content</code> directory into the <code>./public</code> directory.</p>
+<p>grafē finds HTML templates in the <code>./templates</code> and <code>./theme/templates</code> directories.
+Within the template folder, grafē pages are rendered from layouts in the <code>templates/layouts</code> directory; each layout to be used in rendering includes all templates in the <code>templates/includes</code> directory.</p>
+<p>grafē copies the contents of the <code>./theme/static</code> and the <code>./static</code> directories in that order over to <code>./public/static</code> directory.</p>
+<p>grafē also generates a <code>.nojekyll</code> file in the <code>./public directory</code>.</p>
+<p>A typical project structure before rendering is:</p>
+<pre><code class="language-text">.
+|--+content
+|  |---index.md
+|--+static
+|  |--+styles
+|     |---newStylesheet.css
+|--+templates
+|  |---layouts
+|  |---includes
+|--+theme
+   |--+static
+   |  |--+styles
+   |     |---stylesheet.css
+   |--+templates
+      |---layouts
+      |---includes
+</code></pre>
+<p>After running grafē, this becomes:</p>
+<pre><code class="language-text">.
+|--+content
+|  |---index.md
+|--+static
+|  |--+styles
+|     |---newStylesheet.css
+|--+templates
+|  |---layouts
+|  |---includes
+|--+theme
+|  |--+static
+|  |  |--+styles
+|  |     |---stylesheet.css
+|  |--+templates
+|     |---layouts
+|     |---includes
+|--+public
+   |--+static
+   |  |--+styles
+   |     |---newStylesheet.css
+   |     |---stylesheet.css
+   |---index.html
+   |---.nojekyll
+</code></pre>
+
+
+
+
+        <footer>
+            
+
+    <hr>
+
+    <div>Powered by
+        <a href="https://golang.org/">Go</a>
+        and
+        <a href="https://github.com/ellifteria/grafe">graf&emacr;</a>
+    </div>
+
+
+        </footer>
+    </body>
+
+</html>
+
+
+
+

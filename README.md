@@ -10,6 +10,6 @@ Created by [Elli Beres](https://elliberes.me).
 
 Using:
 
-- [goldmark](https://github.com/yuin/goldmark) and goldmark extensions for markdown rendering
-- [abhinav](http://abhinavg.net/) [wikilink](https://go.abhg.dev/goldmark/wikilink) and [anchor](https://go.abhg.dev/goldmark/anchor) goldmark extension
-- litao91's [goldmark-mathjax](https://github.com/litao91/goldmark-mathjax) goldmark extension
+- [yuin](https://github.com/yuin)'s [goldmark](https://github.com/yuin/goldmark) parser and goldmark extensions for markdown parsing
+- [abhinav](http://abhinavg.net/)'s [wikilink](https://go.abhg.dev/goldmark/wikilink) and [anchor](https://go.abhg.dev/goldmark/anchor) goldmark extension for wiki-style links and anchor links
+- litao91's [goldmark-mathjax](https://github.com/litao91/goldmark-mathjax) goldmark extension for MathJax support

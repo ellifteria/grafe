@@ -131,7 +131,7 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 func main() {
 	templates = make(map[string]*template.Template)
 
-	templatesDir := "templates/"
+	templatesDir := "theme/templates/"
 
 	layouts, err := filepath.Glob(templatesDir + "layouts/*")
 	check(err)
@@ -192,6 +192,15 @@ func main() {
 				"public/"+newFileName,
 			)
 		}
+	})
+
+	walk("theme/static", func(fileName string) {
+		newFileName := strings.TrimPrefix(fileName, "theme/")
+		createDirectoryPath("public/" + newFileName)
+		copyFile(
+			fileName,
+			"public/"+newFileName,
+		)
 	})
 
 	walk("static", func(fileName string) {
