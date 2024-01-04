@@ -8,11 +8,7 @@ date: 24-01-04
 Template: page
 ---
 
-grafē is a simple static site generator written by [[https://elliberes.me|Elli Beres]].
-It uses:
-- [yuin](https://github.com/yuin)'s [goldmark](https://github.com/yuin/goldmark) parser and goldmark extensions for markdown parsing
-- [abhinav](http://abhinavg.net/)'s [wikilink](https://go.abhg.dev/goldmark/wikilink) and [anchor](https://go.abhg.dev/goldmark/anchor) goldmark extension for wiki-style links and anchor links
-- litao91's [goldmark-mathjax](https://github.com/litao91/goldmark-mathjax) goldmark extension for MathJax support
+grafē is a simple static site generator.
 
 ## Installation
 
@@ -83,3 +79,12 @@ After running grafē, this becomes:
    |---index.html
    |---.nojekyll
 ```
+
+## Credits
+
+Created by [[https://elliberes.me|Elli Beres]] using:
+
+- [yuin](https://github.com/yuin)'s [goldmark](https://github.com/yuin/goldmark) parser and goldmark extensions for markdown parsing
+- [abhinav](http://abhinavg.net/)'s [wikilink](https://go.abhg.dev/goldmark/wikilink) and [anchor](https://go.abhg.dev/goldmark/anchor) goldmark extension for wiki-style links and anchor links
+- litao91's [goldmark-mathjax](https://github.com/litao91/goldmark-mathjax) goldmark extension for MathJax support
+
