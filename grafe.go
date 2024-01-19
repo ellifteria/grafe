@@ -195,7 +195,7 @@ func main() {
 	})
 
 	walk("theme/static", func(fileName string) {
-		newFileName := strings.TrimPrefix(fileName, "theme/")
+		newFileName := strings.TrimPrefix(fileName, "theme/static/")
 		createDirectoryPath("public/" + newFileName)
 		copyFile(
 			fileName,
@@ -204,10 +204,11 @@ func main() {
 	})
 
 	walk("static", func(fileName string) {
-		createDirectoryPath("public/" + fileName)
+		newFileName := strings.TrimPrefix(fileName, "static/")
+		createDirectoryPath("public/" + newFileName)
 		copyFile(
 			fileName,
-			"public/"+fileName,
+			"public/"+newFileName,
 		)
 	})
 
