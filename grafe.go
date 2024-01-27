@@ -22,6 +22,8 @@ import (
 	mathjax "github.com/litao91/goldmark-mathjax"
 
 	"go.abhg.dev/goldmark/anchor"
+
+	"github.com/clarkmcc/go-typescript"
 )
 
 var templates map[string]*template.Template
@@ -128,6 +130,20 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 	check(err)
 }
 
+func transpileTypescript(tsFilePath string, jsOutputPath string) {
+	tsCode, err := os.ReadFile(tsFilePath)
+	check(err)
+
+	transpiled, err := typescript.TranspileString(string(tsCode))
+	check(err)
+
+	outputFile, err := os.Create(jsOutputPath)
+	check(err)
+
+	_, err = outputFile.WriteString(transpiled)
+	check(err)
+}
+
 func main() {
 	templates = make(map[string]*template.Template)
 
@@ -210,6 +226,17 @@ func main() {
 			fileName,
 			"public/"+newFileName,
 		)
+	})
+
+	walk("public", func(fileName string) {
+		if getExtension(fileName) != ".ts" {
+			return
+		}
+		newFileName := changeExtension(fileName, ".js")
+		createDirectoryPath("public/" + newFileName)
+		transpileTypescript(fileName, newFileName)
+		err = os.Remove(fileName)
+		check(err)
 	})
 
 	_, err = os.Create("public/.nojekyll")
