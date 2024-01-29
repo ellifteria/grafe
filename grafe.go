@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"flag"
 	"fmt"
 	"html/template"
 	"io"
@@ -220,6 +221,11 @@ func startHTTPServer(directory string) {
 }
 
 func main() {
+	enableTypeScriptTranspilationPtr := flag.Bool("transpile-ts", true, "Transpile all TypeScript in the `public` directory.")
+	createNoJekyllFilePtr := flag.Bool("nojekyll", true, "Create `public/.nojekyll`; required to host static site on GitHub pages.")
+	enableHttpServerPtr := flag.Bool("server", false, "Start HTTP server of `public` directory at http://localhost:8081/.")
+
+	flag.Parse()
 
 	templates := generateTemplates("theme/templates/")
 
@@ -257,10 +263,16 @@ func main() {
 
 	copyStaticDirectory("static")
 
-	transpileTypescript()
+	if *enableTypeScriptTranspilationPtr {
+		transpileTypescript()
+	}
 
-	_, err = os.Create("public/.nojekyll")
-	check(err)
+	if *createNoJekyllFilePtr {
+		_, err = os.Create("public/.nojekyll")
+		check(err)
+	}
 
-	startHTTPServer("public")
+	if *enableHttpServerPtr {
+		startHTTPServer("public")
+	}
 }
