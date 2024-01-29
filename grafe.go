@@ -26,8 +26,6 @@ import (
 	"github.com/clarkmcc/go-typescript"
 )
 
-var templates map[string]*template.Template
-
 func check(err error) {
 	if err != nil {
 		log.Fatal(err)
@@ -83,7 +81,7 @@ func copyFile(sourcePath string, destinationPath string) {
 	check(err)
 }
 
-func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputFile string) {
+func generateHtmlFile(templates map[string]*template.Template, markdownWriter goldmark.Markdown, sourceMd string, outputFile string) {
 	var buf bytes.Buffer
 	var err error
 
@@ -130,7 +128,7 @@ func generateHtmlFile(markdownWriter goldmark.Markdown, sourceMd string, outputF
 	check(err)
 }
 
-func transpileTypescript(tsFilePath string, jsOutputPath string) {
+func transpileTypescriptFile(tsFilePath string, jsOutputPath string) {
 	tsCode, err := os.ReadFile(tsFilePath)
 	check(err)
 
@@ -144,10 +142,10 @@ func transpileTypescript(tsFilePath string, jsOutputPath string) {
 	check(err)
 }
 
-func main() {
-	templates = make(map[string]*template.Template)
+func generateTemplates(directory string) map[string]*template.Template {
+	templates := make(map[string]*template.Template)
 
-	templatesDir := "theme/templates/"
+	templatesDir := directory
 
 	layouts, err := filepath.Glob(templatesDir + "layouts/*")
 	check(err)
@@ -159,6 +157,62 @@ func main() {
 		files := append(includes, layout)
 		templates[filepath.Base(layout)] = template.Must(template.ParseFiles(files...))
 	}
+
+	return templates
+}
+
+func convertContentDirectory(templates map[string]*template.Template, markdownWriter goldmark.Markdown) {
+	walk("content", func(fileName string) {
+		if getExtension(fileName) == ".md" {
+			fileData, err := os.ReadFile(fileName)
+			check(err)
+			generateHtmlFile(
+				templates,
+				markdownWriter,
+				string(fileData),
+				"public/"+strings.TrimPrefix(
+					changeExtension(fileName, ".html"),
+					"content/",
+				),
+			)
+		} else {
+			newFileName := strings.TrimPrefix(fileName, "content/")
+			createDirectoryPath("public/" + newFileName)
+			copyFile(
+				fileName,
+				"public/"+newFileName,
+			)
+		}
+	})
+}
+
+func copyStaticDirectory(directoryToCopy string) {
+	walk(directoryToCopy, func(fileName string) {
+		newFileName := strings.TrimPrefix(fileName, directoryToCopy)
+		createDirectoryPath("public/" + newFileName)
+		copyFile(
+			fileName,
+			"public/"+newFileName,
+		)
+	})
+}
+
+func transpileTypescript() {
+	walk("public", func(fileName string) {
+		if getExtension(fileName) != ".ts" {
+			return
+		}
+		newFileName := changeExtension(fileName, ".js")
+		createDirectoryPath("public/" + newFileName)
+		transpileTypescriptFile(fileName, newFileName)
+		err := os.Remove(fileName)
+		check(err)
+	})
+}
+
+func main() {
+
+	templates := generateTemplates("theme/templates/")
 
 	markdownWriter := goldmark.New(
 		goldmark.WithParserOptions(
@@ -185,59 +239,16 @@ func main() {
 		),
 	)
 
-	err = os.RemoveAll("public")
+	err := os.RemoveAll("public")
 	check(err)
 
-	walk("content", func(fileName string) {
-		if getExtension(fileName) == ".md" {
-			fileData, err := os.ReadFile(fileName)
-			check(err)
-			generateHtmlFile(
-				markdownWriter,
-				string(fileData),
-				"public/"+strings.TrimPrefix(
-					changeExtension(fileName, ".html"),
-					"content/",
-				),
-			)
-		} else {
-			newFileName := strings.TrimPrefix(fileName, "content/")
-			createDirectoryPath("public/" + newFileName)
-			copyFile(
-				fileName,
-				"public/"+newFileName,
-			)
-		}
-	})
+	convertContentDirectory(templates, markdownWriter)
 
-	walk("theme/static", func(fileName string) {
-		newFileName := strings.TrimPrefix(fileName, "theme/static/")
-		createDirectoryPath("public/" + newFileName)
-		copyFile(
-			fileName,
-			"public/"+newFileName,
-		)
-	})
+	copyStaticDirectory("theme/static")
 
-	walk("static", func(fileName string) {
-		newFileName := strings.TrimPrefix(fileName, "static/")
-		createDirectoryPath("public/" + newFileName)
-		copyFile(
-			fileName,
-			"public/"+newFileName,
-		)
-	})
+	copyStaticDirectory("static")
 
-	walk("public", func(fileName string) {
-		if getExtension(fileName) != ".ts" {
-			return
-		}
-		newFileName := changeExtension(fileName, ".js")
-		createDirectoryPath("public/" + newFileName)
-		transpileTypescript(fileName, newFileName)
-		err = os.Remove(fileName)
-		check(err)
-	})
+	transpileTypescript()
 
 	_, err = os.Create("public/.nojekyll")
 	check(err)
