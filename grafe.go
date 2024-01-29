@@ -2,9 +2,11 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -210,6 +212,13 @@ func transpileTypescript() {
 	})
 }
 
+func startHTTPServer(directory string) {
+	fmt.Println("Starting server at http://localhost:8081/")
+	http.Handle("/", http.FileServer(http.Dir(directory)))
+
+	log.Fatal(http.ListenAndServe(":8081", nil))
+}
+
 func main() {
 
 	templates := generateTemplates("theme/templates/")
@@ -252,4 +261,6 @@ func main() {
 
 	_, err = os.Create("public/.nojekyll")
 	check(err)
+
+	startHTTPServer("public")
 }
