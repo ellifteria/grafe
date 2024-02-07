@@ -189,13 +189,13 @@ func convertContentDirectory(templates map[string]*template.Template, markdownWr
 	})
 }
 
-func copyStaticDirectory(directoryToCopy string) {
+func copyDirectoryFiles(directoryToCopy string, newDirectoryPath string) {
 	walk(directoryToCopy, func(fileName string) {
 		newFileName := strings.TrimPrefix(fileName, directoryToCopy)
-		createDirectoryPath("public/" + newFileName)
+		createDirectoryPath(newDirectoryPath + newFileName)
 		copyFile(
 			fileName,
-			"public/"+newFileName,
+			newDirectoryPath+newFileName,
 		)
 	})
 }
@@ -227,7 +227,13 @@ func main() {
 
 	flag.Parse()
 
-	templates := generateTemplates("theme/templates/")
+	err := os.RemoveAll("public-generator")
+	check(err)
+
+	createDirectoryPath("public-generator/templates")
+	copyDirectoryFiles("theme/templates", "public-generator/templates")
+	copyDirectoryFiles("templates", "public-generator/templates")
+	templates := generateTemplates("public-generator/templates/")
 
 	markdownWriter := goldmark.New(
 		goldmark.WithParserOptions(
@@ -254,14 +260,17 @@ func main() {
 		),
 	)
 
-	err := os.RemoveAll("public")
+	err = os.RemoveAll("public")
 	check(err)
 
 	convertContentDirectory(templates, markdownWriter)
 
-	copyStaticDirectory("theme/static")
+	copyDirectoryFiles("theme/static", "public")
 
-	copyStaticDirectory("static")
+	copyDirectoryFiles("static", "public")
+
+	err = os.RemoveAll("public-generator")
+	check(err)
 
 	if *enableTypeScriptTranspilationPtr {
 		transpileTypescript()
