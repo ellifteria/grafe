@@ -220,15 +220,21 @@ func startHTTPServer(directory string) {
 	log.Fatal(http.ListenAndServe(":8081", nil))
 }
 
+func pruneDirectory(directory string) {
+	err := os.RemoveAll(directory)
+	check(err)
+}
+
 func main() {
+	var err error
+
 	enableTypeScriptTranspilationPtr := flag.Bool("transpile-ts", true, "Transpile all TypeScript in the `public` directory.")
 	createNoJekyllFilePtr := flag.Bool("nojekyll", true, "Create `public/.nojekyll`; required to host static site on GitHub pages.")
 	enableHttpServerPtr := flag.Bool("server", false, "Start HTTP server of `public` directory at http://localhost:8081/.")
 
 	flag.Parse()
 
-	err := os.RemoveAll("public-generator")
-	check(err)
+	pruneDirectory("public-generator")
 
 	createDirectoryPath("public-generator/templates")
 	copyDirectoryFiles("theme/templates", "public-generator/templates")
@@ -260,8 +266,7 @@ func main() {
 		),
 	)
 
-	err = os.RemoveAll("public")
-	check(err)
+	pruneDirectory("public")
 
 	convertContentDirectory(templates, markdownWriter)
 
@@ -269,8 +274,7 @@ func main() {
 
 	copyDirectoryFiles("static", "public")
 
-	err = os.RemoveAll("public-generator")
-	check(err)
+	pruneDirectory("public-generator")
 
 	if *enableTypeScriptTranspilationPtr {
 		transpileTypescript()
