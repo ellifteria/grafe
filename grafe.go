@@ -84,7 +84,7 @@ func copyFile(sourcePath string, destinationPath string) {
 	check(err)
 }
 
-func generateHtmlFile(templates map[string]*template.Template, markdownWriter goldmark.Markdown, sourceMd string, outputFile string) {
+func generateHtmlFile(templates map[string]*template.Template, markdownWriter goldmark.Markdown, sourceMd string, outputFile string, config map[string]interface{}) {
 	var buf bytes.Buffer
 	var err error
 
@@ -93,7 +93,7 @@ func generateHtmlFile(templates map[string]*template.Template, markdownWriter go
 	check(err)
 	metaData := meta.Get(context)
 
-	if metaData["Draft"] == true {
+	if metaData["draft"] == true {
 		return
 	}
 
@@ -102,7 +102,7 @@ func generateHtmlFile(templates map[string]*template.Template, markdownWriter go
 	check(err)
 	defer file.Close()
 
-	params := metaData["Params"]
+	params := metaData["params"]
 
 	if params == nil {
 		params = *new(map[any]any)
@@ -112,15 +112,15 @@ func generateHtmlFile(templates map[string]*template.Template, markdownWriter go
 		Title      string
 		Summary    string
 		Body       template.HTML
-		PageParams map[any]any
+		PageParams any
+		SiteParams any
 	}{
-		Title:      metaData["Title"].(string),
-		Summary:    metaData["Summary"].(string),
 		Body:       template.HTML(buf.String()),
-		PageParams: params.(map[any]any),
+		PageParams: metaData,
+		SiteParams: config,
 	}
 
-	pageTemplateFile := addExtension(metaData["Template"].(string), ".html")
+	pageTemplateFile := addExtension(metaData["template"].(string), ".html")
 
 	pageTemplate, ok := templates[pageTemplateFile]
 	if !ok {
@@ -164,7 +164,7 @@ func generateTemplates(directory string) map[string]*template.Template {
 	return templates
 }
 
-func convertContentDirectory(templates map[string]*template.Template, markdownWriter goldmark.Markdown) {
+func convertContentDirectory(templates map[string]*template.Template, markdownWriter goldmark.Markdown, config map[string]interface{}) {
 	walk("content", func(fileName string) {
 		if getExtension(fileName) == ".md" {
 			fileData, err := os.ReadFile(fileName)
@@ -177,6 +177,7 @@ func convertContentDirectory(templates map[string]*template.Template, markdownWr
 					changeExtension(fileName, ".html"),
 					"content/",
 				),
+				config,
 			)
 		} else {
 			newFileName := strings.TrimPrefix(fileName, "content/")
@@ -187,6 +188,19 @@ func convertContentDirectory(templates map[string]*template.Template, markdownWr
 			)
 		}
 	})
+}
+
+func readConfigFile(markdownWriter goldmark.Markdown, configFile string) map[string]interface{} {
+	var buf bytes.Buffer
+
+	fileData, err := os.ReadFile(configFile)
+	check(err)
+
+	context := parser.NewContext()
+	err = markdownWriter.Convert([]byte(string(fileData)), &buf, parser.WithContext(context))
+	check(err)
+
+	return meta.Get(context)
 }
 
 func copyDirectoryFiles(directoryToCopy string, newDirectoryPath string) {
@@ -241,6 +255,14 @@ func main() {
 	copyDirectoryFiles("templates", "public-generator/templates")
 	templates := generateTemplates("public-generator/templates/")
 
+	configMarkdown := goldmark.New(
+		goldmark.WithExtensions(
+			meta.Meta,
+		),
+	)
+
+	config := readConfigFile(configMarkdown, "config.md")
+
 	markdownWriter := goldmark.New(
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
@@ -268,7 +290,7 @@ func main() {
 
 	pruneDirectory("public")
 
-	convertContentDirectory(templates, markdownWriter)
+	convertContentDirectory(templates, markdownWriter, config)
 
 	copyDirectoryFiles("theme/static", "public")
 
