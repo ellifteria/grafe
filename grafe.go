@@ -277,6 +277,7 @@ func main() {
 			},
 			mathjax.MathJax,
 			extension.TaskList,
+			extension.Table,
 		),
 		goldmark.WithRendererOptions(
 			renderer.WithNodeRenderers(
