@@ -276,6 +276,7 @@ func main() {
 				Position: anchor.Before,
 			},
 			mathjax.MathJax,
+			extension.TaskList,
 		),
 		goldmark.WithRendererOptions(
 			renderer.WithNodeRenderers(
