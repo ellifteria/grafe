@@ -20,11 +20,11 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"github.com/yuin/goldmark/util"
 
+	fences "github.com/stefanfritsch/goldmark-fences"
+
 	"go.abhg.dev/goldmark/wikilink"
 
 	mathjax "github.com/litao91/goldmark-mathjax"
-
-	"go.abhg.dev/goldmark/anchor"
 
 	"github.com/clarkmcc/go-typescript"
 )
@@ -266,18 +266,16 @@ func main() {
 	markdownWriter := goldmark.New(
 		goldmark.WithParserOptions(
 			parser.WithAutoHeadingID(),
+			parser.WithAttribute(),
 		),
 		goldmark.WithExtensions(
 			meta.Meta,
 			extension.Table,
 			&wikilink.Extender{},
-			&anchor.Extender{
-				Texter:   anchor.Text("#"),
-				Position: anchor.Before,
-			},
 			mathjax.MathJax,
 			extension.TaskList,
 			extension.Table,
+			&fences.Extender{},
 		),
 		goldmark.WithRendererOptions(
 			renderer.WithNodeRenderers(
