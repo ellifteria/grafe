@@ -214,13 +214,13 @@ func copyDirectoryFiles(directoryToCopy string, newDirectoryPath string) {
 	})
 }
 
-func transpileTypescript() {
-	walk("public", func(fileName string) {
+func transpileTypescript(directory string) {
+	walk(directory, func(fileName string) {
 		if getExtension(fileName) != ".ts" {
 			return
 		}
 		newFileName := changeExtension(fileName, ".js")
-		createDirectoryPath("public/" + newFileName)
+		createDirectoryPath(directory + "/" + newFileName)
 		transpileTypescriptFile(fileName, newFileName)
 		err := os.Remove(fileName)
 		check(err)
@@ -290,16 +290,16 @@ func main() {
 
 	pruneDirectory("public")
 
-	convertContentDirectory(templates, markdownWriter, config)
-
 	copyDirectoryFiles("theme/static", "public")
 
 	copyDirectoryFiles("static", "public")
 
+	convertContentDirectory(templates, markdownWriter, config)
+
 	pruneDirectory("public-generator")
 
 	if *enableTypeScriptTranspilationPtr {
-		transpileTypescript()
+		transpileTypescript("public")
 	}
 
 	if *createNoJekyllFilePtr {
