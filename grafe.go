@@ -9,8 +9,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
+	"syscall"
+	"time"
 
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
@@ -230,6 +234,24 @@ func transpileTypescript(directory string) {
 func startHTTPServer(directory string, port int) {
 	fmt.Printf("Starting server at http://localhost:%d/\n", port)
 	http.Handle("/", http.FileServer(http.Dir(directory)))
+
+	httpServerExitDone := &sync.WaitGroup{}
+	httpServerExitDone.Add(1)
+
+	closeHTTPServer := func() {
+		httpServerExitDone.Done()
+		httpServerExitDone.Wait()
+		time.Sleep(10 * time.Second)
+		fmt.Println("Closing")
+	}
+
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		closeHTTPServer()
+		os.Exit(1)
+	}()
 
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
