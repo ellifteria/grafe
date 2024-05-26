@@ -227,11 +227,11 @@ func transpileTypescript(directory string) {
 	})
 }
 
-func startHTTPServer(directory string) {
-	fmt.Println("Starting server at http://localhost:8081/")
+func startHTTPServer(directory string, port int) {
+	fmt.Printf("Starting server at http://localhost:%d/\n", port)
 	http.Handle("/", http.FileServer(http.Dir(directory)))
 
-	log.Fatal(http.ListenAndServe(":8081", nil))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
 
 func pruneDirectory(directory string) {
@@ -244,7 +244,8 @@ func main() {
 
 	enableTypeScriptTranspilationPtr := flag.Bool("transpile-ts", true, "Transpile all TypeScript in the `public` directory.")
 	createNoJekyllFilePtr := flag.Bool("nojekyll", true, "Create `public/.nojekyll`; required to host static site on GitHub pages.")
-	enableHttpServerPtr := flag.Bool("server", false, "Start HTTP server of `public` directory at http://localhost:8081/.")
+	enableHttpServerPtr := flag.Bool("server", false, "Start HTTP server of `public` directory.")
+	httpServerPortPtr := flag.Int("port", 8081, "Port at which to host HTTP server.")
 
 	flag.Parse()
 
@@ -308,6 +309,6 @@ func main() {
 	}
 
 	if *enableHttpServerPtr {
-		startHTTPServer("public")
+		startHTTPServer("public", *httpServerPortPtr)
 	}
 }
