@@ -25,6 +25,8 @@ import (
 
 	fences "github.com/stefanfritsch/goldmark-fences"
 
+	wikitable "github.com/movsb/goldmark-wiki-table"
+
 	"go.abhg.dev/goldmark/wikilink"
 
 	mathjax "github.com/litao91/goldmark-mathjax"
@@ -297,6 +299,7 @@ func main() {
 			extension.TaskList,
 			extension.Table,
 			&fences.Extender{},
+			wikitable.New(),
 		),
 		goldmark.WithRendererOptions(
 			renderer.WithNodeRenderers(

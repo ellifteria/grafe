@@ -9,6 +9,7 @@ require (
 	github.com/dop251/goja v0.0.0-20211115154819-26ebff68a7d5 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/litao91/goldmark-mathjax v0.0.0-20210217064022-a43cf739a50f // indirect
+	github.com/movsb/goldmark-wiki-table v0.0.0-20231129190305-f329ff86c85b // indirect
 	github.com/stefanfritsch/goldmark-fences v1.0.0 // indirect
 	github.com/yuin/goldmark v1.6.0 // indirect
 	github.com/yuin/goldmark-meta v1.1.0 // indirect
