@@ -185,12 +185,14 @@ func convertContentDirectory(templates map[string]*template.Template, markdownWr
 				config,
 			)
 		} else {
-			newFileName := strings.TrimPrefix(fileName, "content/")
-			createDirectoryPath("public/" + newFileName)
-			copyFile(
-				fileName,
-				"public/"+newFileName,
-			)
+			if !strings.Contains(fileName, ".git") {
+				newFileName := strings.TrimPrefix(fileName, "content/")
+				createDirectoryPath("public/" + newFileName)
+				copyFile(
+					fileName,
+					"public/"+newFileName,
+				)
+			}
 		}
 	})
 }
