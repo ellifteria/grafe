@@ -169,7 +169,7 @@ func generateTemplates(directory string) map[string]*template.Template {
 	return templates
 }
 
-func convertContentDirectory(templates map[string]*template.Template, markdownWriter goldmark.Markdown, config map[string]interface{}) {
+func convertContentDirectory(templates map[string]*template.Template, markdownWriter goldmark.Markdown, config map[string]interface{}, ignoreObsidian bool) {
 	walk("content", func(fileName string) {
 		if getExtension(fileName) == ".md" {
 			fileData, err := os.ReadFile(fileName)
@@ -185,7 +185,7 @@ func convertContentDirectory(templates map[string]*template.Template, markdownWr
 				config,
 			)
 		} else {
-			if !strings.Contains(fileName, ".git") {
+			if !strings.Contains(fileName, ".git") && !(ignoreObsidian && strings.Contains(fileName, ".obsidian")) {
 				newFileName := strings.TrimPrefix(fileName, "content/")
 				createDirectoryPath("public/" + newFileName)
 				copyFile(
@@ -268,6 +268,7 @@ func main() {
 
 	enableTypeScriptTranspilationPtr := flag.Bool("transpile-ts", true, "Transpile all TypeScript in the `public` directory.")
 	createNoJekyllFilePtr := flag.Bool("nojekyll", true, "Create `public/.nojekyll`; required to host static site on GitHub pages.")
+	ignoreObsidianPtr := flag.Bool("ignoreobsidian", true, "Ignore .obsidian directory in content directory.")
 	enableHttpServerPtr := flag.Bool("server", false, "Start HTTP server of `public` directory.")
 	httpServerPortPtr := flag.Int("port", 8081, "Port at which to host HTTP server.")
 
@@ -320,7 +321,7 @@ func main() {
 
 	copyDirectoryFiles("static", "public")
 
-	convertContentDirectory(templates, markdownWriter, config)
+	convertContentDirectory(templates, markdownWriter, config, *ignoreObsidianPtr)
 
 	pruneDirectory("public-generator")
 
