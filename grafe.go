@@ -15,6 +15,8 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/Masterminds/sprig/v3"
+
 	"github.com/yuin/goldmark"
 	meta "github.com/yuin/goldmark-meta"
 	"github.com/yuin/goldmark/extension"
@@ -89,7 +91,7 @@ func copyFile(sourcePath string, destinationPath string) {
 	check(err)
 }
 
-func generateHtmlFile(templates map[string]*template.Template, markdownWriter goldmark.Markdown, sourceMd string, outputFile string, config map[string]interface{}) {
+func generateHtmlFile(templates map[string]*template.Template, markdownWriter goldmark.Markdown, sourceMd string, outputFile string, config map[string]interface{}, pagePath []string) {
 	var buf bytes.Buffer
 	var err error
 
@@ -119,10 +121,12 @@ func generateHtmlFile(templates map[string]*template.Template, markdownWriter go
 		Body       template.HTML
 		PageParams any
 		SiteParams any
+		PagePath   []string
 	}{
 		Body:       template.HTML(buf.String()),
 		PageParams: metaData,
 		SiteParams: config,
+		PagePath:   pagePath,
 	}
 
 	pageTemplateFile := addExtension(metaData["template"].(string), ".html")
@@ -163,7 +167,7 @@ func generateTemplates(directory string) map[string]*template.Template {
 
 	for _, layout := range layouts {
 		files := append(includes, layout)
-		templates[filepath.Base(layout)] = template.Must(template.ParseFiles(files...))
+		templates[filepath.Base(layout)] = template.Must(template.New("template").Funcs(sprig.FuncMap()).ParseFiles(files...))
 	}
 
 	return templates
@@ -174,6 +178,7 @@ func convertContentDirectory(templates map[string]*template.Template, markdownWr
 		if getExtension(fileName) == ".md" && !strings.Contains(fileName, "IGNORE") {
 			fileData, err := os.ReadFile(fileName)
 			check(err)
+			pagePath := strings.Split(strings.TrimSuffix(strings.TrimPrefix(removeExtension(fileName), "content/"), "/index"), "/")
 			generateHtmlFile(
 				templates,
 				markdownWriter,
@@ -183,6 +188,7 @@ func convertContentDirectory(templates map[string]*template.Template, markdownWr
 					"content/",
 				),
 				config,
+				pagePath,
 			)
 		} else {
 			if !strings.Contains(fileName, ".git") && !strings.Contains(fileName, "IGNORE") && !(ignoreObsidian && strings.Contains(fileName, ".obsidian")) {
