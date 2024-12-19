@@ -171,7 +171,7 @@ func generateTemplates(directory string) map[string]*template.Template {
 
 func convertContentDirectory(templates map[string]*template.Template, markdownWriter goldmark.Markdown, config map[string]interface{}, ignoreObsidian bool) {
 	walk("content", func(fileName string) {
-		if getExtension(fileName) == ".md" {
+		if getExtension(fileName) == ".md" && !strings.Contains(fileName, "IGNORE") {
 			fileData, err := os.ReadFile(fileName)
 			check(err)
 			generateHtmlFile(
